@@ -20,7 +20,8 @@ namespace zydis {
         std::array<ZydisDecodedOperand, ZYDIS_MAX_OPERAND_COUNT> operands{};
     };
 
-    export bool init(const ZydisMachineMode mode, const ZydisStackWidth stack_width, const ZydisFormatterStyle formatter_style) {
+    export bool
+    init(const ZydisMachineMode mode, const ZydisStackWidth stack_width, const ZydisFormatterStyle formatter_style) {
         if (!ZYAN_SUCCESS(ZydisDecoderInit(&decoder, mode, stack_width))) {
             return false;
         }
