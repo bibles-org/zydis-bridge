@@ -38,7 +38,7 @@ export namespace zydis {
         const ZyanStatus status = ZydisDecoderDecodeFull(
                 &decoder, address, ZYDIS_MAX_INSTRUCTION_LENGTH, &result.decoded, result.operands.data()
         );
-        if (ZYAN_SUCCESS(status)) {
+        if (!ZYAN_SUCCESS(status)) {
             return std::nullopt;
         }
 
