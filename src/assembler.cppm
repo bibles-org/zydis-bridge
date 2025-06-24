@@ -31,7 +31,7 @@ export namespace zydis::assembler {
     struct mem {
         ZydisRegister base{ZYDIS_REGISTER_NONE};
         ZydisRegister index{ZYDIS_REGISTER_NONE};
-        ZyanU8 scale{1};
+        ZyanU8 scale{0};
         ZyanI64 disp{0};
 
         // explicit size override for the memory operand in BITS
