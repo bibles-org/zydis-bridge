@@ -214,15 +214,22 @@ export namespace zydis::assembler {
         friend class code_block;
 
     public:
-        [[nodiscard]] std::vector<std::uint8_t> encode() const {
+        [[nodiscard]] std::vector<std::uint8_t>
+        encode(ZyanU64 runtime_address = ZYDIS_RUNTIME_ADDRESS_NONE) const {
             ZydisEncoderRequest req = m_request;
             req.machine_mode = zydis::decoder.machine_mode;
 
             std::vector<std::uint8_t> result_bytes(ZYDIS_MAX_INSTRUCTION_LENGTH);
             ZyanUSize encoded_length = result_bytes.size();
+            ZyanStatus status;
 
-            const ZyanStatus status =
-                    ZydisEncoderEncodeInstruction(&req, result_bytes.data(), &encoded_length);
+            if (runtime_address == ZYDIS_RUNTIME_ADDRESS_NONE) {
+                status = ZydisEncoderEncodeInstruction(&req, result_bytes.data(), &encoded_length);
+            } else {
+                status = ZydisEncoderEncodeInstructionAbsolute(
+                        &req, result_bytes.data(), &encoded_length, runtime_address
+                );
+            }
 
             if (!ZYAN_SUCCESS(status)) {
                 throw std::runtime_error("failed to encode instruction");
@@ -244,11 +251,19 @@ export namespace zydis::assembler {
             return *this;
         }
 
-        [[nodiscard]] std::vector<std::uint8_t> encode() const {
+        [[nodiscard]] std::vector<std::uint8_t> encode(ZyanU64 base_runtime_address = 0) const {
             std::vector<std::uint8_t> result;
+            ZyanU64 current_address = base_runtime_address;
+
             for (const auto& instr : m_instructions) {
-                auto bytes = instr.encode();
+                // instruction address
+                auto bytes = instr.encode(current_address);
                 result.insert(result.end(), bytes.begin(), bytes.end());
+
+                // the next instruction address is after the current one
+                if (current_address != 0) {
+                    current_address += bytes.size();
+                }
             }
             return result;
         }
