@@ -1,4 +1,7 @@
 module;
+
+#include <Zydis/Encoder.h>
+#include <Zycore/Types.h>
 #include <Zydis/Zydis.h>
 
 export module zydis;
