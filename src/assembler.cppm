@@ -33,6 +33,9 @@ export namespace zydis::assembler {
         ZydisRegister index{ZYDIS_REGISTER_NONE};
         ZyanU8 scale{1};
         ZyanI64 disp{0};
+
+        // explicit size override for the memory operand in BITS
+        // 0 means the size is inferred by the encoder
         ZyanU16 size_override{0};
     };
 
@@ -196,7 +199,8 @@ export namespace zydis::assembler {
                             enc_op.mem.scale = arg.scale;
                             enc_op.mem.displacement = arg.disp;
                             if (arg.size_override > 0) {
-                                enc_op.mem.size = arg.size_override;
+                                // request expects bytes
+                                enc_op.mem.size = arg.size_override / 8;
                             }
                         }
                     },
