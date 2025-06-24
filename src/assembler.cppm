@@ -126,6 +126,7 @@ export namespace zydis::assembler {
         constexpr reg r14{ZYDIS_REGISTER_R14};
         constexpr reg r15{ZYDIS_REGISTER_R15};
 
+        constexpr reg rip{ZYDIS_REGISTER_RIP};
         // clang-format on
     } // namespace registers
 
