@@ -6,6 +6,7 @@ module;
 
 export module zydis;
 export import :decoder;
+export import :assembler;
 
 namespace zydis {
     export bool

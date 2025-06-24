@@ -9,6 +9,7 @@ add_library(${PROJECT_NAME} STATIC)
 target_sources(${PROJECT_NAME} PUBLIC FILE_SET CXX_MODULES FILES
         src/zydis.cppm
         src/decoder.cppm
+        src/assembler.cppm
 )
 
 target_link_libraries(${PROJECT_NAME} PRIVATE Zydis::Zydis)

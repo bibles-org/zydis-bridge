@@ -16,7 +16,7 @@ AllowShortFunctionsOnASingleLine: None
 AllowShortIfStatementsOnASingleLine: false
 BreakConstructorInitializers: AfterColon
 BreakConstructorInitializersBeforeComma: false
-ColumnLimit: 120
+ColumnLimit: 100
 AlignArrayOfStructures: Left
 ConstructorInitializerAllOnOneLineOrOnePerLine: false
 ContinuationIndentWidth: 8
