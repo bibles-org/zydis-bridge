@@ -12,6 +12,17 @@ export module zydis:assembler;
 
 import :decoder;
 
+// todo: remove later after we make the utils a separate submodule
+namespace utils {
+    template <typename... Vs>
+    struct visitor : Vs... {
+        using Vs::operator()...;
+    };
+
+    template <typename ... Vs>
+    visitor(Vs...) -> visitor<Vs...>;
+} // namespace utils
+
 export namespace zydis::assembler {
     struct instruction;
     class code_block;
@@ -138,7 +149,11 @@ export namespace zydis::assembler {
      * [rax] = ptr(rax) || [rbp-0x10] = ptr(rbp, -0x10)
      */
     [[nodiscard]] constexpr mem ptr(registers base, ZyanI64 disp = 0, ZyanU16 size_override = 0) {
-        return mem{.base = static_cast<ZydisRegister>(base), .disp = disp, .size_override = size_override};
+        return mem{
+                .base = static_cast<ZydisRegister>(base),
+                .disp = disp,
+                .size_override = size_override
+        };
     }
 
     /**
@@ -158,7 +173,8 @@ export namespace zydis::assembler {
      * ptr(rax, rbx, 4, 0x20) = [rax + rbx*4 + 0x20]
      */
     [[nodiscard]] constexpr mem
-    ptr(registers base, registers index, ZyanU8 scale, ZyanI64 disp = 0, ZyanU16 size_override = 0) {
+    ptr(registers base, registers index, ZyanU8 scale, ZyanI64 disp = 0,
+        ZyanU16 size_override = 0) {
         return mem{
                 .base = static_cast<ZydisRegister>(base),
                 .index = static_cast<ZydisRegister>(base),
@@ -184,25 +200,26 @@ export namespace zydis::assembler {
             auto& enc_op = m_request.operands[m_request.operand_count++];
 
             std::visit(
-                    [&](auto&& arg) {
-                        using T = std::decay_t<decltype(arg)>;
-                        if constexpr (std::is_same_v<T, reg>) {
-                            enc_op.type = ZYDIS_OPERAND_TYPE_REGISTER;
-                            enc_op.reg.value = arg.value;
-                        } else if constexpr (std::is_same_v<T, imm>) {
-                            enc_op.type = ZYDIS_OPERAND_TYPE_IMMEDIATE;
-                            enc_op.imm.s = arg.value;
-                        } else if constexpr (std::is_same_v<T, mem>) {
-                            enc_op.type = ZYDIS_OPERAND_TYPE_MEMORY;
-                            enc_op.mem.base = arg.base;
-                            enc_op.mem.index = arg.index;
-                            enc_op.mem.scale = arg.scale;
-                            enc_op.mem.displacement = arg.disp;
-                            if (arg.size_override > 0) {
-                                // request expects bytes
-                                enc_op.mem.size = arg.size_override / 8;
+                    utils::visitor{
+                            [&](registers reg) {
+                                enc_op.type = ZYDIS_OPERAND_TYPE_REGISTER;
+                                enc_op.reg.value = static_cast<ZydisRegister>(reg);
+                            },
+                            [&](const imm& immediate) {
+                                enc_op.type = ZYDIS_OPERAND_TYPE_IMMEDIATE;
+                                enc_op.imm.s = immediate.value;
+                            },
+                            [&](const mem& memory) {
+                                enc_op.type = ZYDIS_OPERAND_TYPE_MEMORY;
+                                enc_op.mem.base = memory.base;
+                                enc_op.mem.index = memory.index;
+                                enc_op.mem.scale = memory.scale;
+                                enc_op.mem.displacement = memory.disp;
+                                if (memory.size_override > 0) {
+                                    // request expects bytes
+                                    enc_op.mem.size = memory.size_override / 8;
+                                }
                             }
-                        }
                     },
                     op
             );
