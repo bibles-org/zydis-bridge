@@ -16,6 +16,98 @@ export namespace zydis::assembler {
     struct instruction;
     class code_block;
 
+    // GPRs
+    enum class registers {
+        // clang-format off
+        // 8-bit
+         al = ZYDIS_REGISTER_AL,
+         cl = ZYDIS_REGISTER_CL,
+         dl = ZYDIS_REGISTER_DL,
+         bl = ZYDIS_REGISTER_BL,
+
+         ah = ZYDIS_REGISTER_AH,
+         ch = ZYDIS_REGISTER_CH,
+         dh = ZYDIS_REGISTER_DH,
+         bh = ZYDIS_REGISTER_BH,
+
+         spl = ZYDIS_REGISTER_SPL,
+         bpl = ZYDIS_REGISTER_BPL,
+         sil = ZYDIS_REGISTER_SIL,
+         dil = ZYDIS_REGISTER_DIL,
+
+         r8b = ZYDIS_REGISTER_R8B,
+         r9b = ZYDIS_REGISTER_R9B,
+         r10b = ZYDIS_REGISTER_R10B,
+         r11b = ZYDIS_REGISTER_R11B,
+         r12b = ZYDIS_REGISTER_R12B,
+         r13b = ZYDIS_REGISTER_R13B,
+         r14b = ZYDIS_REGISTER_R14B,
+         r15b = ZYDIS_REGISTER_R15B,
+
+        // 16-bit
+         ax = ZYDIS_REGISTER_AX,
+         cx = ZYDIS_REGISTER_CX,
+         dx = ZYDIS_REGISTER_DX,
+         bx = ZYDIS_REGISTER_BX,
+
+         sp = ZYDIS_REGISTER_SP,
+         bp = ZYDIS_REGISTER_BP,
+         si = ZYDIS_REGISTER_SI,
+         di = ZYDIS_REGISTER_DI,
+
+         r8w = ZYDIS_REGISTER_R8W,
+         r9w = ZYDIS_REGISTER_R9W,
+         r10w = ZYDIS_REGISTER_R10W,
+         r11w = ZYDIS_REGISTER_R11W,
+         r12w = ZYDIS_REGISTER_R12W,
+         r13w = ZYDIS_REGISTER_R13W,
+         r14w = ZYDIS_REGISTER_R14W,
+         r15w = ZYDIS_REGISTER_R15W,
+
+        // 32-bit
+         eax = ZYDIS_REGISTER_EAX,
+         ecx = ZYDIS_REGISTER_ECX,
+         edx = ZYDIS_REGISTER_EDX,
+         ebx = ZYDIS_REGISTER_EBX,
+
+         esp = ZYDIS_REGISTER_ESP,
+         ebp = ZYDIS_REGISTER_EBP,
+         esi = ZYDIS_REGISTER_ESI,
+         edi = ZYDIS_REGISTER_EDI,
+
+         r8d = ZYDIS_REGISTER_R8D,
+         r9d = ZYDIS_REGISTER_R9D,
+         r10d = ZYDIS_REGISTER_R10D,
+         r11d = ZYDIS_REGISTER_R11D,
+         r12d = ZYDIS_REGISTER_R12D,
+         r13d = ZYDIS_REGISTER_R13D,
+         r14d = ZYDIS_REGISTER_R14D,
+         r15d = ZYDIS_REGISTER_R15D,
+
+        // 64-bit
+         rax = ZYDIS_REGISTER_RAX,
+         rcx = ZYDIS_REGISTER_RCX,
+         rdx = ZYDIS_REGISTER_RDX,
+         rbx = ZYDIS_REGISTER_RBX,
+
+         rsp = ZYDIS_REGISTER_RSP,
+         rbp = ZYDIS_REGISTER_RBP,
+         rsi = ZYDIS_REGISTER_RSI,
+         rdi = ZYDIS_REGISTER_RDI,
+
+         r8 = ZYDIS_REGISTER_R8,
+         r9 = ZYDIS_REGISTER_R9,
+         r10 = ZYDIS_REGISTER_R10,
+         r11 = ZYDIS_REGISTER_R11,
+         r12 = ZYDIS_REGISTER_R12,
+         r13 = ZYDIS_REGISTER_R13,
+         r14 = ZYDIS_REGISTER_R14,
+         r15 = ZYDIS_REGISTER_R15,
+
+         rip = ZYDIS_REGISTER_RIP,
+        // clang-format on
+    };
+
     struct reg {
         ZydisRegister value;
     };
@@ -39,106 +131,14 @@ export namespace zydis::assembler {
         ZyanU16 size_override{0};
     };
 
-    using operand = std::variant<reg, imm, mem>;
-
-    // GPRs
-    namespace registers {
-        // clang-format off
-        // 8-bit
-        constexpr reg al{ZYDIS_REGISTER_AL};
-        constexpr reg cl{ZYDIS_REGISTER_CL};
-        constexpr reg dl{ZYDIS_REGISTER_DL};
-        constexpr reg bl{ZYDIS_REGISTER_BL};
-
-        constexpr reg ah{ZYDIS_REGISTER_AH};
-        constexpr reg ch{ZYDIS_REGISTER_CH};
-        constexpr reg dh{ZYDIS_REGISTER_DH};
-        constexpr reg bh{ZYDIS_REGISTER_BH};
-
-        constexpr reg spl{ZYDIS_REGISTER_SPL};
-        constexpr reg bpl{ZYDIS_REGISTER_BPL};
-        constexpr reg sil{ZYDIS_REGISTER_SIL};
-        constexpr reg dil{ZYDIS_REGISTER_DIL};
-
-        constexpr reg r8b{ZYDIS_REGISTER_R8B};
-        constexpr reg r9b{ZYDIS_REGISTER_R9B};
-        constexpr reg r10b{ZYDIS_REGISTER_R10B};
-        constexpr reg r11b{ZYDIS_REGISTER_R11B};
-        constexpr reg r12b{ZYDIS_REGISTER_R12B};
-        constexpr reg r13b{ZYDIS_REGISTER_R13B};
-        constexpr reg r14b{ZYDIS_REGISTER_R14B};
-        constexpr reg r15b{ZYDIS_REGISTER_R15B};
-
-        // 16-bit
-        constexpr reg ax{ZYDIS_REGISTER_AX};
-        constexpr reg cx{ZYDIS_REGISTER_CX};
-        constexpr reg dx{ZYDIS_REGISTER_DX};
-        constexpr reg bx{ZYDIS_REGISTER_BX};
-
-        constexpr reg sp{ZYDIS_REGISTER_SP};
-        constexpr reg bp{ZYDIS_REGISTER_BP};
-        constexpr reg si{ZYDIS_REGISTER_SI};
-        constexpr reg di{ZYDIS_REGISTER_DI};
-
-        constexpr reg r8w{ZYDIS_REGISTER_R8W};
-        constexpr reg r9w{ZYDIS_REGISTER_R9W};
-        constexpr reg r10w{ZYDIS_REGISTER_R10W};
-        constexpr reg r11w{ZYDIS_REGISTER_R11W};
-        constexpr reg r12w{ZYDIS_REGISTER_R12W};
-        constexpr reg r13w{ZYDIS_REGISTER_R13W};
-        constexpr reg r14w{ZYDIS_REGISTER_R14W};
-        constexpr reg r15w{ZYDIS_REGISTER_R15W};
-
-        // 32-bit
-        constexpr reg eax{ZYDIS_REGISTER_EAX};
-        constexpr reg ecx{ZYDIS_REGISTER_ECX};
-        constexpr reg edx{ZYDIS_REGISTER_EDX};
-        constexpr reg ebx{ZYDIS_REGISTER_EBX};
-
-        constexpr reg esp{ZYDIS_REGISTER_ESP};
-        constexpr reg ebp{ZYDIS_REGISTER_EBP};
-        constexpr reg esi{ZYDIS_REGISTER_ESI};
-        constexpr reg edi{ZYDIS_REGISTER_EDI};
-
-        constexpr reg r8d{ZYDIS_REGISTER_R8D};
-        constexpr reg r9d{ZYDIS_REGISTER_R9D};
-        constexpr reg r10d{ZYDIS_REGISTER_R10D};
-        constexpr reg r11d{ZYDIS_REGISTER_R11D};
-        constexpr reg r12d{ZYDIS_REGISTER_R12D};
-        constexpr reg r13d{ZYDIS_REGISTER_R13D};
-        constexpr reg r14d{ZYDIS_REGISTER_R14D};
-        constexpr reg r15d{ZYDIS_REGISTER_R15D};
-
-        // 64-bit
-        constexpr reg rax{ZYDIS_REGISTER_RAX};
-        constexpr reg rcx{ZYDIS_REGISTER_RCX};
-        constexpr reg rdx{ZYDIS_REGISTER_RDX};
-        constexpr reg rbx{ZYDIS_REGISTER_RBX};
-
-        constexpr reg rsp{ZYDIS_REGISTER_RSP};
-        constexpr reg rbp{ZYDIS_REGISTER_RBP};
-        constexpr reg rsi{ZYDIS_REGISTER_RSI};
-        constexpr reg rdi{ZYDIS_REGISTER_RDI};
-
-        constexpr reg r8{ZYDIS_REGISTER_R8};
-        constexpr reg r9{ZYDIS_REGISTER_R9};
-        constexpr reg r10{ZYDIS_REGISTER_R10};
-        constexpr reg r11{ZYDIS_REGISTER_R11};
-        constexpr reg r12{ZYDIS_REGISTER_R12};
-        constexpr reg r13{ZYDIS_REGISTER_R13};
-        constexpr reg r14{ZYDIS_REGISTER_R14};
-        constexpr reg r15{ZYDIS_REGISTER_R15};
-
-        constexpr reg rip{ZYDIS_REGISTER_RIP};
-        // clang-format on
-    } // namespace registers
+    using operand = std::variant<registers, imm, mem>;
 
     /**
      * create a memory operand with a base register and optional displacement
      * [rax] = ptr(rax) || [rbp-0x10] = ptr(rbp, -0x10)
      */
-    [[nodiscard]] constexpr mem ptr(reg base, ZyanI64 disp = 0, ZyanU16 size_override = 0) {
-        return mem{.base = base.value, .disp = disp, .size_override = size_override};
+    [[nodiscard]] constexpr mem ptr(registers base, ZyanI64 disp = 0, ZyanU16 size_override = 0) {
+        return mem{.base = static_cast<ZydisRegister>(base), .disp = disp, .size_override = size_override};
     }
 
     /**
@@ -158,10 +158,10 @@ export namespace zydis::assembler {
      * ptr(rax, rbx, 4, 0x20) = [rax + rbx*4 + 0x20]
      */
     [[nodiscard]] constexpr mem
-    ptr(reg base, reg index, ZyanU8 scale, ZyanI64 disp = 0, ZyanU16 size_override = 0) {
+    ptr(registers base, registers index, ZyanU8 scale, ZyanI64 disp = 0, ZyanU16 size_override = 0) {
         return mem{
-                .base = base.value,
-                .index = index.value,
+                .base = static_cast<ZydisRegister>(base),
+                .index = static_cast<ZydisRegister>(base),
                 .scale = scale,
                 .disp = disp,
                 .size_override = size_override
