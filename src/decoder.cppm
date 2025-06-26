@@ -20,6 +20,18 @@ export namespace zydis {
         std::array<ZydisDecodedOperand, ZYDIS_MAX_OPERAND_COUNT> operands{};
     };
 
+    // gets the instruction info without decoding operands, much faster.
+    std::optional<ZydisDecodedInstruction> get_instruction_info(std::uint8_t const* const address) {
+        ZydisDecodedInstruction decoded{};
+        const ZyanStatus status = ZydisDecoderDecodeInstruction(
+            &decoder, nullptr, address, ZYDIS_MAX_INSTRUCTION_LENGTH, &decoded
+        );
+        if (!ZYAN_SUCCESS(status)) {
+            return std::nullopt;
+        }
+        return decoded;
+    }
+
     std::optional<std::string> format(const instruction& target_instruction) {
         const ZyanStatus status = ZydisFormatterFormatInstruction(
                 &formatter, &target_instruction.decoded, target_instruction.operands.data(),
