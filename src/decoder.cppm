@@ -57,8 +57,7 @@ export namespace zydis {
         return result;
     }
 
-    std::optional<std::pair<instruction, std::string>>
-    disassemble_format(std::uint8_t const* const address) {
+    std::optional<std::pair<instruction, std::string>> disassemble_format(std::uint8_t const* const address) {
         instruction result{};
         const ZyanStatus status = ZydisDecoderDecodeFull(
                 &decoder, address, ZYDIS_MAX_INSTRUCTION_LENGTH, &result.decoded, result.operands.data()
@@ -67,19 +66,13 @@ export namespace zydis {
             return std::nullopt;
         }
 
-        const ZyanStatus format_status = ZydisFormatterFormatInstruction(
-                &formatter, &result.decoded, result.operands.data(),
-                result.decoded.operand_count_visible,
-                format_buffer.data(), format_buffer.size(),
-                ZYDIS_RUNTIME_ADDRESS_NONE, nullptr
-        );
-
-        if (!ZYAN_SUCCESS(format_status)) {
-             return std::make_pair(result, "FORMAT_ERROR");
+        const auto formatted_instruction = format(result);
+        if (!formatted_instruction) {
+            return std::nullopt;
         }
 
-        return std::make_pair(result, format_buffer.data());
-    } 
+        return std::make_pair(result, *formatted_instruction);
+    }
 
     std::optional<std::vector<instruction>>
     disassemble(std::uint8_t const* const address, const std::size_t instruction_count) {
