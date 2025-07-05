@@ -6,10 +6,22 @@ module;
 #include <vector>
 
 #include <Zydis/Zydis.h>
+#include <Zydis/Utils.h>
+#include <Zydis/Mnemonic.h>
 
 export module zydis:decoder;
+import address;
+
+export {
+    using ::ZydisMnemonic;
+    using enum ZydisMnemonic;
+
+    using ::ZydisInstructionAttributes;
+}
 
 export namespace zydis {
+    constexpr ZydisInstructionAttributes ATTRIB_IS_RELATIVE = ZYDIS_ATTRIB_IS_RELATIVE;
+
     ZydisDecoder decoder{};
     ZydisFormatter formatter{};
     std::array<char, 512> format_buffer{};
@@ -18,6 +30,35 @@ export namespace zydis {
     struct instruction {
         ZydisDecodedInstruction decoded{};
         std::array<ZydisDecodedOperand, ZYDIS_MAX_OPERAND_COUNT> operands{};
+
+        [[nodiscard]] bool is_relative() const noexcept {
+            return decoded.attributes & ATTRIB_IS_RELATIVE;
+        }
+
+        [[nodiscard]] std::optional<utils::address>
+        get_absolute_address(utils::address runtime_address) const {
+            for (std::size_t i = 0; i < decoded.operand_count; ++i) {
+                if (operands[i].type == ZYDIS_OPERAND_TYPE_MEMORY &&
+                    operands[i].mem.base == ZYDIS_REGISTER_RIP) {
+                    ZyanU64 result_address{};
+                    if (ZYAN_SUCCESS(ZydisCalcAbsoluteAddress(&decoded, &operands[i], runtime_address,
+                                                              &result_address))) {
+                        return utils::address{result_address};
+                    }
+                } else if (operands[i].type == ZYDIS_OPERAND_TYPE_IMMEDIATE && operands[i].imm.is_relative) {
+                    ZyanU64 result_address{};
+                    if (ZYAN_SUCCESS(ZydisCalcAbsoluteAddress(&decoded, &operands[i], runtime_address,
+                                                              &result_address))) {
+                        return utils::address{result_address};
+                    }
+                }
+            }
+            return std::nullopt;
+        }
+
+        [[nodiscard]] const char* get_mnemonic_string() const noexcept {
+            return ZydisMnemonicGetString(decoded.mnemonic);
+        }
     };
 
     // gets the instruction info without decoding operands, much faster.
