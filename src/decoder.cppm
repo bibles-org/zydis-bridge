@@ -10,7 +10,7 @@ module;
 #include <Zydis/Mnemonic.h>
 
 export module zydis:decoder;
-export import :address;
+export import address;
 
 export {
     using ::ZydisMnemonic;
