@@ -4,7 +4,10 @@ project(zydis-bridge VERSION 0.1 LANGUAGES C CXX)
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-add_subdirectory(vendor/address)
+if(NOT TARGET address)
+    add_subdirectory(vendor/address)
+endif()
+
 add_subdirectory(vendor/zydis)
 add_library(${PROJECT_NAME} STATIC)
 
