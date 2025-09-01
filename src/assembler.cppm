@@ -168,6 +168,32 @@ export namespace zydis::assembler {
         };
     }
 
+    constexpr mem byte_ptr(registers base, ZyanI64 disp = 0) {
+        return ptr(base, disp, 8);
+    }
+    constexpr mem word_ptr(registers base, ZyanI64 disp = 0) {
+        return ptr(base, disp, 16);
+    }
+    constexpr mem dword_ptr(registers base, ZyanI64 disp = 0) {
+        return ptr(base, disp, 32);
+    }
+    constexpr mem qword_ptr(registers base, ZyanI64 disp = 0) {
+        return ptr(base, disp, 64);
+    }
+
+    constexpr mem byte_ptr(ZyanU64 absolute_disp) {
+        return ptr(absolute_disp, 8);
+    }
+    constexpr mem word_ptr(ZyanU64 absolute_disp) {
+        return ptr(absolute_disp, 16);
+    }
+    constexpr mem dword_ptr(ZyanU64 absolute_disp) {
+        return ptr(absolute_disp, 32);
+    }
+    constexpr mem qword_ptr(ZyanU64 absolute_disp) {
+        return ptr(absolute_disp, 64);
+    }
+
     /**
      * create a memory operand with [base] [index] [scale] and optional displacement
      * ptr(rax, rbx, 4, 0x20) = [rax + rbx*4 + 0x20]
