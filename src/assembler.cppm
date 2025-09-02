@@ -252,6 +252,7 @@ export namespace zydis::assembler {
         }
 
         friend instruction mov(operand dst, operand src);
+        friend instruction cmp(operand op1, operand op2);
         friend instruction jmp(operand target);
         friend instruction nop();
         friend class code_block;
@@ -316,6 +317,13 @@ export namespace zydis::assembler {
         instruction instr(ZYDIS_MNEMONIC_MOV);
         instr.add_operand(dst);
         instr.add_operand(src);
+        return instr;
+    }
+
+    [[nodiscard]] instruction cmp(operand op1, operand op2) {
+        instruction instr(ZYDIS_MNEMONIC_CMP);
+        instr.add_operand(op1);
+        instr.add_operand(op2);
         return instr;
     }
 
