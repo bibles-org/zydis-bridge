@@ -203,7 +203,7 @@ export namespace zydis::assembler {
         ZyanU16 size_override = 0) {
         return mem{
                 .base = static_cast<ZydisRegister>(base),
-                .index = static_cast<ZydisRegister>(base),
+                .index = static_cast<ZydisRegister>(index),
                 .scale = scale,
                 .disp = disp,
                 .size_override = size_override
