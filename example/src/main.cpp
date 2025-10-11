@@ -17,11 +17,11 @@ int main() {
   using namespace zydis::assembler;
 
   auto program = code_block{}
-    << instruction{ZYDIS_MNEMONIC_MOV, registers::rax, imm{0x69}}
-    << instruction{ZYDIS_MNEMONIC_MOV, registers::rdx, imm{0x69}}
-    << instruction{ZYDIS_MNEMONIC_ADD, registers::rax, registers::rdx}
-    << instruction{ZYDIS_MNEMONIC_MOV, qword_ptr(registers::rcx), registers::rax}
-    << instruction{ZYDIS_MNEMONIC_RET};
+    << mov(registers::rax, imm{0x69})
+    << mov(registers::rdx, imm{0x69})
+    << add(registers::rax, registers::rdx)
+    << mov(qword_ptr(registers::rcx), registers::rax)
+    << ret();
 
   const auto encoded = program.encode();
   void* exec_mem = nullptr;

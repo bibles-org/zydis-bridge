@@ -319,8 +319,16 @@ export namespace zydis::assembler {
         return {ZYDIS_MNEMONIC_JMP, target};
     }
 
+    instruction add(operand dst, operand src) {
+        return {ZYDIS_MNEMONIC_ADD, dst, src};
+    }
+
     instruction nop() {
         return {ZYDIS_MNEMONIC_NOP};
+    }
+
+    instruction ret() {
+        return {ZYDIS_MNEMONIC_RET};
     }
 
 } // namespace zydis::assembler
