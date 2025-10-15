@@ -1,6 +1,7 @@
 module;
 
 #include <cstdint>
+#include <expected>
 #include <stdexcept>
 #include <string>
 #include <variant>
@@ -209,53 +210,81 @@ export namespace zydis::assembler {
 
     struct instruction {
     private:
-        ZydisEncoderRequest m_request{};
+        ZydisMnemonic m_mnemonic;
+        std::vector<operand> m_operands;
 
     public:
-        void add_operand(const operand& op) {
-            if (m_request.operand_count >= ZYDIS_ENCODER_MAX_OPERANDS) {
-                throw std::runtime_error("exceeded maximum number of operands for an instruction");
-            }
-
-            auto& enc_op = m_request.operands[m_request.operand_count++];
-
-            std::visit(
-                    utils::visitor{
-                            [&](registers reg) {
-                                enc_op.type = ZYDIS_OPERAND_TYPE_REGISTER;
-                                enc_op.reg.value = static_cast<ZydisRegister>(reg);
-                            },
-                            [&](const imm& immediate) {
-                                enc_op.type = ZYDIS_OPERAND_TYPE_IMMEDIATE;
-                                enc_op.imm.s = immediate.value;
-                            },
-                            [&](const mem& memory) {
-                                enc_op.type = ZYDIS_OPERAND_TYPE_MEMORY;
-                                enc_op.mem.base = memory.base;
-                                enc_op.mem.index = memory.index;
-                                enc_op.mem.scale = memory.scale;
-                                enc_op.mem.displacement = memory.disp;
-                                if (memory.size_override > 0) {
-                                    // request expects bytes
-                                    enc_op.mem.size = memory.size_override / 8;
-                                }
-                            }
-                    },
-                    op
-            );
+        instruction(ZydisMnemonic mnemonic, std::vector<operand> operands) :
+            m_mnemonic(mnemonic), m_operands(std::move(operands)) {
         }
 
         // instruction{ZydisMnemonic, operands..}
         template <typename... Operands>
-        instruction(ZydisMnemonic mnemonic, Operands&&... ops) {
-            m_request.mnemonic = mnemonic;
-            (add_operand(std::forward<Operands>(ops)), ...);
+        instruction(ZydisMnemonic mnemonic, Operands&&... ops) : m_mnemonic(mnemonic) {
+            m_operands.reserve(sizeof...(ops));
+            (m_operands.push_back(std::forward<Operands>(ops)), ...);
         }
+
+        [[nodiscard]] ZydisMnemonic get_mnemonic() const {
+            return m_mnemonic;
+        }
+        void set_mnemonic(ZydisMnemonic mnemonic) {
+            m_mnemonic = mnemonic;
+        }
+
+        [[nodiscard]] std::vector<operand>& get_operands() {
+            return m_operands;
+        }
+        [[nodiscard]] operand& get_operand(size_t index) {
+            return m_operands.at(index);
+        }
+        [[nodiscard]] const std::vector<operand>& get_operands() const {
+            return m_operands;
+        }
+        [[nodiscard]] const operand& get_operand(size_t index) const {
+            return m_operands.at(index);
+        }
+
 
         [[nodiscard]] std::vector<std::uint8_t>
         encode(ZyanU64 runtime_address = ZYDIS_RUNTIME_ADDRESS_NONE) const {
-            ZydisEncoderRequest req = m_request;
+            ZydisEncoderRequest req{};
+            req.mnemonic = m_mnemonic;
             req.machine_mode = zydis::decoder.machine_mode;
+
+            if (m_operands.size() > ZYDIS_ENCODER_MAX_OPERANDS) {
+                throw std::runtime_error("exceeded maximum number of operands for an instruction");
+            }
+
+            for (size_t i = 0; i < m_operands.size(); ++i) {
+                req.operand_count++;
+                auto& enc_op = req.operands[i];
+                const auto& op = m_operands[i];
+
+                std::visit(
+                        utils::visitor{
+                                [&](registers reg) {
+                                    enc_op.type = ZYDIS_OPERAND_TYPE_REGISTER;
+                                    enc_op.reg.value = static_cast<ZydisRegister>(reg);
+                                },
+                                [&](const imm& immediate) {
+                                    enc_op.type = ZYDIS_OPERAND_TYPE_IMMEDIATE;
+                                    enc_op.imm.s = immediate.value;
+                                },
+                                [&](const mem& memory) {
+                                    enc_op.type = ZYDIS_OPERAND_TYPE_MEMORY;
+                                    enc_op.mem.base = memory.base;
+                                    enc_op.mem.index = memory.index;
+                                    enc_op.mem.scale = memory.scale;
+                                    enc_op.mem.displacement = memory.disp;
+                                    if (memory.size_override > 0) {
+                                        enc_op.mem.size = memory.size_override / 8;
+                                    }
+                                }
+                        },
+                        op
+                );
+            }
 
             std::vector<std::uint8_t> result_bytes(ZYDIS_MAX_INSTRUCTION_LENGTH);
             ZyanUSize encoded_length = result_bytes.size();
@@ -270,13 +299,40 @@ export namespace zydis::assembler {
             }
 
             if (!ZYAN_SUCCESS(status)) {
-                throw std::runtime_error("failed to encode instruction");
+                throw std::runtime_error(
+                        std::string("failed to encode instruction: ") +
+                        ZydisMnemonicGetString(m_mnemonic)
+                );
             }
 
             result_bytes.resize(encoded_length);
             return result_bytes;
         }
     };
+
+    namespace detail {
+        std::expected<operand, std::string> to_assembler_operand(const ZydisDecodedOperand& op) {
+            switch (op.type) {
+                case ZYDIS_OPERAND_TYPE_REGISTER:
+                    return static_cast<registers>(op.reg.value);
+                case ZYDIS_OPERAND_TYPE_IMMEDIATE:
+                    return imm{op.imm.value.s};
+                case ZYDIS_OPERAND_TYPE_MEMORY:
+                    return mem{
+                            .base = op.mem.base,
+                            .index = op.mem.index,
+                            .scale = op.mem.scale,
+                            .disp = op.mem.disp.value,
+                            .size_override = op.size
+                    };
+                default:
+                    return std::unexpected(
+                            std::string("unsupported operand type for conversion: ") +
+                            std::to_string(op.type)
+                    );
+            }
+        }
+    } // namespace detail
 
     class code_block {
     private:
@@ -287,6 +343,51 @@ export namespace zydis::assembler {
         code_block& operator<<(instruction&& instr) {
             m_instructions.push_back(std::move(instr));
             return *this;
+        }
+
+        auto begin() {
+            return m_instructions.begin();
+        }
+        auto end() {
+            return m_instructions.end();
+        }
+        [[nodiscard]] auto begin() const {
+            return m_instructions.begin();
+        }
+        [[nodiscard]] auto end() const {
+            return m_instructions.end();
+        }
+
+        [[nodiscard]] static std::expected<code_block, std::string>
+        from_bytes(const std::uint8_t* data, std::size_t size) {
+            code_block block;
+            std::size_t offset = 0;
+
+            while (offset < size) {
+                const auto* current_ptr = data + offset;
+                auto decoded_opt = zydis::disassemble(current_ptr);
+                if (!decoded_opt) {
+                    return std::unexpected(
+                            "failed to disassemble at offset: " + std::to_string(offset)
+                    );
+                }
+
+                const auto& decoded_instr = decoded_opt->decoded;
+                const auto& decoded_ops = decoded_opt->operands;
+
+                std::vector<operand> ops;
+                for (ZyanU8 i = 0; i < decoded_instr.operand_count_visible; ++i) {
+                    auto op_exp = detail::to_assembler_operand(decoded_ops[i]);
+                    if (!op_exp) {
+                        return std::unexpected(op_exp.error());
+                    }
+                    ops.push_back(*op_exp);
+                }
+
+                block.m_instructions.emplace_back(decoded_instr.mnemonic, std::move(ops));
+                offset += decoded_instr.length;
+            }
+            return block;
         }
 
         [[nodiscard]] std::vector<std::uint8_t> encode(ZyanU64 base_runtime_address = 0) const {
