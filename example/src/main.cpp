@@ -1,5 +1,3 @@
-import zydis;
-
 #include <cstdint>
 #include <expected>
 #include <format>
@@ -12,6 +10,8 @@ import zydis;
 #else
 #include <sys/mman.h>
 #endif
+
+import zydis;
 
 using namespace zydis::assembler;
 
